@@ -1,0 +1,17 @@
+[package]
+name = "ferricket"
+version = "0.1.0"
+authors = ["Prabir Shrestha <mail@prabir.me>"]
+edition = "2024"
+license = "MIT"
+description = "A fast, file-native ticket tracker"
+repository = "https://github.com/prabirshrestha/ferricket"
+readme = "README.md"
+keywords = ["cli", "ticket", "task", "tracker"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "fer"
+path = "src/main.rs"
+
+[dependencies]
