@@ -1,0 +1,2 @@
+# Generated frontend bundles may contain significant Markdown whitespace literals.
+web/dist/*.js whitespace=-trailing-space

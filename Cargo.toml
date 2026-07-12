@@ -1,0 +1,42 @@
+[package]
+name = "ferricket"
+version = "0.1.0"
+authors = ["Prabir Shrestha <mail@prabir.me>"]
+edition = "2024"
+license = "MIT"
+description = "A fast, file-native ticket tracker"
+repository = "https://github.com/prabirshrestha/ferricket"
+readme = "README.md"
+keywords = ["cli", "ticket", "task", "tracker"]
+categories = ["command-line-utilities", "development-tools"]
+
+[workspace]
+members = ["xtask"]
+resolver = "3"
+
+[[bin]]
+name = "fer"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+argh = "0.1"
+axum = "0.8"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+crossterm = { version = "0.29", features = ["event-stream"] }
+futures = "0.3"
+include_dir = "0.7"
+jaq-core = "3.1"
+jaq-json = { version = "2.0", features = ["serde"] }
+jaq-std = "3.0"
+mime_guess = "2.0"
+notify = "8.2"
+open = "5.3"
+rand = "0.9"
+ratatui = { version = "0.30", default-features = false, features = ["crossterm"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+tokio = { version = "1.48", features = ["full"] }
+tokio-stream = { version = "0.1", features = ["sync"] }

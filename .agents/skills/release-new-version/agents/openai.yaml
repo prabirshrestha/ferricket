@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release New Version"
+  short_description: "Release Ferricket through tag-driven CI"
+  default_prompt: "Use $release-new-version to bump, validate, push, wait for CI, and tag a Ferricket release."
