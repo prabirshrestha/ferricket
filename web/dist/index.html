@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f8fa" />
+    <meta name="darkreader-lock" />
+    <script>
+      ;(() => {
+        try {
+          const saved = localStorage.getItem("ferricket-theme")
+          const theme =
+            saved === "light" || saved === "dark" || saved === "system" ? saved : "system"
+          const resolved =
+            theme === "system"
+              ? typeof matchMedia === "function" &&
+                matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light"
+              : theme
+          document.documentElement.classList.toggle("dark", resolved === "dark")
+          document.documentElement.dataset.theme = theme
+          document.documentElement.style.colorScheme = resolved
+          document.querySelector('meta[name="theme-color"]').content =
+            resolved === "dark" ? "#0b0b0d" : "#f7f8fa"
+        } catch {}
+      })()
+    </script>
+    <title>Ferricket</title>
+    
+  <link rel="stylesheet" crossorigin href="/chunk-rxcmz4wc.css"><script type="module" crossorigin src="/chunk-ncqrt00e.js"></script></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

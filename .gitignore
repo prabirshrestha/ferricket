@@ -1,1 +1,19 @@
 /target
+/ticket
+.tickets/
+/web/node_modules
+/web/*.tsbuildinfo
+
+# Local tools, editors, and operating-system metadata
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tmp
+
+# Local environment and logs
+.env
+.env.*
+!.env.example
+*.log
