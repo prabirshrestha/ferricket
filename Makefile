@@ -2,7 +2,7 @@
 
 CARGO ?= cargo
 
-.PHONY: help build check clean install lock uninstall
+.PHONY: help build check clean install lock publish uninstall
 
 help:
 	@printf '%s\n' \
@@ -11,6 +11,7 @@ help:
 		'make clean      Remove local build artifacts' \
 		'make install    Build and install fer into the local Cargo bin directory' \
 		'make lock       Refresh Ferricket workspace versions in Cargo.lock' \
+		'make publish    Publish Ferricket to crates.io' \
 		'make uninstall  Remove fer from the local Cargo bin directory'
 
 build:
@@ -27,6 +28,9 @@ install:
 
 lock:
 	$(CARGO) x lock
+
+publish:
+	$(CARGO) publish --locked -p ferricket
 
 uninstall:
 	$(CARGO) x uninstall
