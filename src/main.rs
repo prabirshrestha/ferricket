@@ -4,6 +4,7 @@ mod preferences;
 mod query;
 mod storage;
 mod tui;
+mod tui_input;
 mod ui;
 
 use std::process::ExitCode;
