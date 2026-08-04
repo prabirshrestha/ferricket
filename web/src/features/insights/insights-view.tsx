@@ -23,6 +23,8 @@ import {
   type InsightsRangeState,
 } from "./insights-range"
 import { InsightsTrend } from "./insights-trend"
+import { SessionTimeline, sessionEventsInWindow } from "./session-timeline"
+import { useSessionActivity } from "../../hooks/use-session-activity"
 
 export { aggregateInsights, aggregateTrend } from "./insights-data"
 
@@ -46,15 +48,29 @@ export function InsightsView({ tickets }: { tickets: Ticket[] }) {
   const [slice, setSlice] = useState<InsightSlice>("status")
   const [range, setRange] = useState<InsightsRangeState>(defaultInsightsRange)
   const [rangeBeforeZoom, setRangeBeforeZoom] = useState<InsightsRangeState | null>(null)
+  const { activity, error: sessionError } = useSessionActivity()
+  const activityTimestamps = useMemo(
+    () => activity.events.map((event) => event.timestamp),
+    [activity.events],
+  )
   const window = useMemo(
-    () => resolveTrendWindow(tickets, { ...range, bin: "auto" }),
-    [tickets, range],
+    () =>
+      resolveTrendWindow(tickets, {
+        ...range,
+        bin: "auto",
+        eventDates: activityTimestamps,
+      }),
+    [tickets, range, activityTimestamps],
   )
   const windowTickets = useMemo(
     () => ticketsTouchedInWindow(tickets, window.start, window.end),
     [tickets, window],
   )
   const rows = useMemo(() => aggregateInsights(windowTickets, slice), [windowTickets, slice])
+  const windowSessionEvents = useMemo(
+    () => sessionEventsInWindow(activity.events, window.start, window.end),
+    [activity.events, window],
+  )
   const updateRange = (next: InsightsRangeState) => {
     setRangeBeforeZoom(null)
     setRange(next)
@@ -75,6 +91,8 @@ export function InsightsView({ tickets }: { tickets: Ticket[] }) {
           <h1 className="text-xl font-semibold tracking-[-.03em]">Insights</h1>
           <p className="mt-1 text-xs text-muted-foreground">
             {windowTickets.length} {windowTickets.length === 1 ? "ticket" : "tickets"} touched ·{" "}
+            {windowSessionEvents.length} session{" "}
+            {windowSessionEvents.length === 1 ? "event" : "events"} ·{" "}
             {formatWindow(window.start, window.end)}
           </p>
         </div>
@@ -95,7 +113,17 @@ export function InsightsView({ tickets }: { tickets: Ticket[] }) {
         </div>
       </div>
       <div className="grid gap-5">
-        <InsightsTrend tickets={tickets} range={range} onRangeSelect={selectChartRange} />
+        <InsightsTrend
+          tickets={tickets}
+          range={range}
+          activityTimestamps={activityTimestamps}
+          onRangeSelect={selectChartRange}
+        />
+        <SessionTimeline
+          events={windowSessionEvents}
+          warnings={activity.warnings}
+          error={sessionError}
+        />
         <BreakdownPanel
           tickets={windowTickets}
           rows={rows}

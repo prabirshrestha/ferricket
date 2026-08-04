@@ -111,6 +111,7 @@ The embedded React UI provides:
 - editor attachments plus `@` people and `#` local-ticket/GitHub issue or pull-request suggestions;
 - bulk updates, conflict-safe note creation/editing/deletion, searchable labels/parents/assignees, and file actions;
 - persistent display/filter/view choices (including DAG direction) and light, dark, or system theme;
+- a local agent-session timeline that labels new, queued, and steering prompts alongside task completion or stop events;
 - revision/ETag checks that reject edits when a ticket changed on disk.
 
 Insights includes synchronized ticket-state and throughput trends, a shared smart/custom date range,
@@ -118,7 +119,9 @@ automatic or minute-based bins, hover inspection, and drag-to-zoom across charts
 
 Live refresh watches only direct `.md` children of the resolved `.tickets` directory. It is enabled by default and can be paused in the UI. The resolved workspace path is shown in the sidebar.
 
-Binding outside localhost exposes a write-capable API without authentication. Only do this on a trusted network:
+When `fer` runs inside GitHub Copilot CLI, it incrementally records human-authored prompts for that session in Ferricket's per-user config directory and links them to the current workspace. System, skill, and subagent messages are excluded, and prompt activity is never written to `.tickets` or committed with the project. Set `FER_SESSION_RECORDING=0` to disable new captures.
+
+Binding outside localhost exposes a write-capable API and locally recorded prompt activity without authentication. Only do this on a trusted network:
 
 ~~~sh
 fer ui . --host 0.0.0.0 --port 4173 --no-open

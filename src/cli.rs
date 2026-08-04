@@ -14,6 +14,7 @@ use tokio::{fs, io::AsyncWriteExt, process::Command};
 use std::os::unix::fs::PermissionsExt;
 
 use crate::{
+    session_activity,
     storage::{self, CreateTicket, Ticket},
     tui, ui,
 };
@@ -656,16 +657,19 @@ async fn dispatch(command: CommandKind, tickets_dir: Option<&Path>) -> Result<()
         if tickets_dir.is_some() && args.path.is_some() {
             bail!("Error: init path cannot be combined with --tickets-dir");
         }
-        return match tickets_dir {
+        let dir = match tickets_dir {
             Some(path) => init_tickets_dir(path).await,
             None => init(args.path.as_deref()).await,
-        };
+        }?;
+        record_session(&dir).await;
+        return Ok(());
     }
     if let CommandKind::Ui(args) = command {
         let dir = match args.path.as_deref() {
             Some(path) => storage::find_tickets_dir_from(Some(path), false).await?,
             None => storage::find_tickets_dir_with_override(tickets_dir, false).await?,
         };
+        record_session(&dir).await;
         return ui::serve(dir, &args.host, args.port, !args.no_open, !args.no_watch).await;
     }
     if let CommandKind::Tui(args) = command {
@@ -673,10 +677,12 @@ async fn dispatch(command: CommandKind, tickets_dir: Option<&Path>) -> Result<()
             Some(path) => storage::find_tickets_dir_from(Some(path), false).await?,
             None => storage::find_tickets_dir_with_override(tickets_dir, false).await?,
         };
+        record_session(&dir).await;
         return tui::run(dir, !args.no_watch).await;
     }
     let write = matches!(command, CommandKind::Create(_));
     let dir = storage::find_tickets_dir_with_override(tickets_dir, write).await?;
+    record_session(&dir).await;
     match command {
         CommandKind::Create(args) => create(&dir, args).await,
         CommandKind::Start(args) => status(&dir, &args.id, "in_progress").await,
@@ -717,7 +723,13 @@ async fn dispatch_super(args: SuperArgs, tickets_dir: Option<&Path>) -> Result<(
     Box::pin(dispatch(command, tickets_dir)).await
 }
 
-async fn init(path: Option<&Path>) -> Result<()> {
+async fn record_session(dir: &Path) {
+    if let Err(error) = session_activity::record_current(dir).await {
+        eprintln!("Warning: could not record agent session: {error}");
+    }
+}
+
+async fn init(path: Option<&Path>) -> Result<PathBuf> {
     let workspace = match path {
         Some(path) if path.is_absolute() => path.to_owned(),
         Some(path) => std::env::current_dir()
@@ -738,10 +750,10 @@ async fn init(path: Option<&Path>) -> Result<()> {
     })?;
 
     println!("Initialized tickets in {}", tickets.display());
-    Ok(())
+    Ok(tickets)
 }
 
-async fn init_tickets_dir(path: &Path) -> Result<()> {
+async fn init_tickets_dir(path: &Path) -> Result<PathBuf> {
     let tickets = storage::find_tickets_dir_with_override(Some(path), true).await?;
     if let Some(parent) = tickets.parent() {
         fs::create_dir_all(parent)
@@ -759,7 +771,7 @@ async fn init_tickets_dir(path: &Path) -> Result<()> {
         }
     })?;
     println!("Initialized tickets in {}", tickets.display());
-    Ok(())
+    Ok(tickets)
 }
 
 async fn create(dir: &Path, args: CreateArgs) -> Result<()> {

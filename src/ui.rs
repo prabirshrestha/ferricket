@@ -26,7 +26,7 @@ use tokio::{
 use tokio_stream::wrappers::BroadcastStream;
 
 use crate::{
-    github, preferences,
+    github, preferences, session_activity,
     storage::{self, CreateTicket},
 };
 
@@ -40,6 +40,7 @@ struct AppState {
     shutdown: watch::Receiver<bool>,
     watch_enabled: bool,
     mutation_lock: std::sync::Arc<Mutex<()>>,
+    session_lock: std::sync::Arc<Mutex<()>>,
 }
 
 #[derive(Serialize)]
@@ -300,10 +301,12 @@ pub async fn serve(
         shutdown: shutdown_receiver.clone(),
         watch_enabled,
         mutation_lock: std::sync::Arc::new(Mutex::new(())),
+        session_lock: std::sync::Arc::new(Mutex::new(())),
     };
     let app = Router::new()
         .route("/api/meta", get(meta))
         .route("/api/events", get(events))
+        .route("/api/session-events", get(session_events))
         .route(
             "/api/preferences/{section}",
             get(preferences).put(save_preferences),
@@ -408,6 +411,13 @@ async fn save_preferences(
     let _mutation = state.mutation_lock.lock().await;
     preferences::save(&state.preferences_key, &section, &value).await?;
     Ok(Json(value))
+}
+
+async fn session_events(
+    State(state): State<AppState>,
+) -> ApiResult<Json<session_activity::SessionActivity>> {
+    let _session = state.session_lock.lock().await;
+    Ok(Json(session_activity::load(&state.preferences_key).await?))
 }
 
 async fn events(

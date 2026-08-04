@@ -18,6 +18,7 @@ export type TrendOptions = {
   customStart?: string
   customEnd?: string
   customMinutes?: number
+  eventDates?: string[]
   now?: Date
 }
 export type TrendResult = {
@@ -108,6 +109,7 @@ export function resolveTrendWindow(tickets: Ticket[], options: TrendOptions) {
   const now = validDate(options.now) ?? new Date()
   const eventDates = tickets
     .flatMap((ticket) => [parseDate(ticket.created), parseDate(ticket.updated || ticket.created)])
+    .concat((options.eventDates ?? []).map(parseDate))
     .filter((date): date is Date => Boolean(date))
   const [start, end] = resolveRange(options, eventDates, now)
   return { start, end }

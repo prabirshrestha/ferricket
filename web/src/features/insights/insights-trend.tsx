@@ -46,10 +46,12 @@ const binOptions: Array<[TrendBin, string]> = [
 export function InsightsTrend({
   tickets,
   range,
+  activityTimestamps,
   onRangeSelect,
 }: {
   tickets: Ticket[]
   range: InsightsRangeState
+  activityTimestamps: string[]
   onRangeSelect: (start: Date, end: Date) => void
 }) {
   const [bin, setBin] = useState<TrendBin>("auto")
@@ -61,8 +63,14 @@ export function InsightsTrend({
     "open",
   ])
   const result = useMemo(
-    () => aggregateTrend(tickets, { ...range, bin, customMinutes }),
-    [tickets, range, bin, customMinutes],
+    () =>
+      aggregateTrend(tickets, {
+        ...range,
+        bin,
+        customMinutes,
+        eventDates: activityTimestamps,
+      }),
+    [tickets, range, bin, customMinutes, activityTimestamps],
   )
   const selected = series.length ? series : (["open"] as TrendSeries[])
 
