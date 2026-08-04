@@ -73,6 +73,7 @@ Commands:
   add-note <id> [text]         Append timestamped note (or read stdin)
   edit <id>                    Open ticket in $EDITOR
   query [jq-predicate]         Select JSONL with a built-in jq-compatible predicate
+  session                      Record this Copilot interaction for Insights
   tui [path]                   Open the interactive terminal UI
   ui [path]                    Open the bundled web UI
   super <command> [args]       Bypass plugins and run a built-in command
@@ -119,7 +120,7 @@ automatic or minute-based bins, hover inspection, and drag-to-zoom across charts
 
 Live refresh watches only direct `.md` children of the resolved `.tickets` directory. It is enabled by default and can be paused in the UI. The resolved workspace path is shown in the sidebar.
 
-When `fer` runs inside GitHub Copilot CLI, it incrementally records human-authored prompts for that session in Ferricket's per-user config directory and links them to the current workspace. System, skill, and subagent messages are excluded, and prompt activity is never written to `.tickets` or committed with the project. Set `FER_SESSION_RECORDING=0` to disable new captures.
+When `fer` runs inside GitHub Copilot CLI, it incrementally records human-authored prompts for that session in Ferricket's per-user config directory and links them to the current workspace. Agents can call `fer session` at the start of a task to register the current interaction explicitly; other Ferricket commands continue to register it automatically. System, skill, and subagent messages are excluded, and prompt activity is never written to `.tickets` or committed with the project. Set `FER_SESSION_RECORDING=0` to disable new captures.
 
 Binding outside localhost exposes a write-capable API and locally recorded prompt activity without authentication. Only do this on a trusted network:
 
