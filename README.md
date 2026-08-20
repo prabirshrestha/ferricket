@@ -4,6 +4,8 @@ Ferricket is a fast, file-native issue tracker for people and coding agents. The
 
 It includes an async Rust CLI, a keyboard-first terminal UI, and a Linear-style React web UI embedded in the same binary.
 
+![Ferricket turns scattered work into shared momentum](https://github.com/user-attachments/assets/d1da69ed-c4a3-438f-b1a3-52f5b5e1cbb4)
+
 ## Install
 
 ~~~sh
