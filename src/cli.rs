@@ -14,6 +14,7 @@ use tokio::{fs, io::AsyncWriteExt, process::Command};
 use std::os::unix::fs::PermissionsExt;
 
 use crate::{
+    session_activity,
     storage::{self, CreateTicket, Ticket},
     tui, ui,
 };
@@ -53,6 +54,7 @@ Commands:
   add-note <id> [text]         Append timestamped note (or read stdin)
   edit <id>                    Open ticket in $EDITOR
   query [jq-predicate]         Select JSONL with a built-in jq-compatible predicate
+  session                      Record this Copilot interaction for Insights
   tui [path]                   Open the interactive terminal UI
   ui [path]                    Open the bundled web UI
   super <command> [args]       Bypass plugins and run a built-in command
@@ -115,6 +117,7 @@ enum CommandKind {
     AddNote(NoteArgs),
     Edit(EditArgs),
     Query(QueryArgs),
+    Session(SessionArgs),
     Tui(TuiArgs),
     Ui(UiArgs),
     Super(SuperArgs),
@@ -384,6 +387,11 @@ struct QueryArgs {
     #[argh(positional)]
     predicate: Option<String>,
 }
+
+/// record the current GitHub Copilot CLI interaction for Insights
+#[derive(FromArgs)]
+#[argh(subcommand, name = "session")]
+struct SessionArgs {}
 
 /// launch the bundled Ferricket web UI
 #[derive(FromArgs)]
@@ -656,16 +664,19 @@ async fn dispatch(command: CommandKind, tickets_dir: Option<&Path>) -> Result<()
         if tickets_dir.is_some() && args.path.is_some() {
             bail!("Error: init path cannot be combined with --tickets-dir");
         }
-        return match tickets_dir {
+        let dir = match tickets_dir {
             Some(path) => init_tickets_dir(path).await,
             None => init(args.path.as_deref()).await,
-        };
+        }?;
+        record_session(&dir).await;
+        return Ok(());
     }
     if let CommandKind::Ui(args) = command {
         let dir = match args.path.as_deref() {
             Some(path) => storage::find_tickets_dir_from(Some(path), false).await?,
             None => storage::find_tickets_dir_with_override(tickets_dir, false).await?,
         };
+        record_session(&dir).await;
         return ui::serve(dir, &args.host, args.port, !args.no_open, !args.no_watch).await;
     }
     if let CommandKind::Tui(args) = command {
@@ -673,10 +684,14 @@ async fn dispatch(command: CommandKind, tickets_dir: Option<&Path>) -> Result<()
             Some(path) => storage::find_tickets_dir_from(Some(path), false).await?,
             None => storage::find_tickets_dir_with_override(tickets_dir, false).await?,
         };
+        record_session(&dir).await;
         return tui::run(dir, !args.no_watch).await;
     }
     let write = matches!(command, CommandKind::Create(_));
     let dir = storage::find_tickets_dir_with_override(tickets_dir, write).await?;
+    if !matches!(&command, CommandKind::Session(_)) {
+        record_session(&dir).await;
+    }
     match command {
         CommandKind::Create(args) => create(&dir, args).await,
         CommandKind::Start(args) => status(&dir, &args.id, "in_progress").await,
@@ -696,6 +711,7 @@ async fn dispatch(command: CommandKind, tickets_dir: Option<&Path>) -> Result<()
         CommandKind::AddNote(args) => add_note(&dir, args).await,
         CommandKind::Edit(args) => edit(&dir, &args.id).await,
         CommandKind::Query(args) => query(&dir, args.predicate).await,
+        CommandKind::Session(_) => session(&dir).await,
         CommandKind::Init(_) | CommandKind::Ui(_) | CommandKind::Tui(_) | CommandKind::Super(_) => {
             unreachable!()
         }
@@ -717,7 +733,26 @@ async fn dispatch_super(args: SuperArgs, tickets_dir: Option<&Path>) -> Result<(
     Box::pin(dispatch(command, tickets_dir)).await
 }
 
-async fn init(path: Option<&Path>) -> Result<()> {
+async fn record_session(dir: &Path) {
+    if let Err(error) = session_activity::record_current(dir).await {
+        eprintln!("Warning: could not record agent session: {error}");
+    }
+}
+
+async fn session(dir: &Path) -> Result<()> {
+    if !session_activity::record_current(dir).await? {
+        bail!(
+            "Error: no active GitHub Copilot CLI interaction found (or FER_SESSION_RECORDING is disabled)"
+        );
+    }
+    println!(
+        "Recorded current Copilot interaction for {}",
+        dir.parent().unwrap_or(dir).display()
+    );
+    Ok(())
+}
+
+async fn init(path: Option<&Path>) -> Result<PathBuf> {
     let workspace = match path {
         Some(path) if path.is_absolute() => path.to_owned(),
         Some(path) => std::env::current_dir()
@@ -738,10 +773,10 @@ async fn init(path: Option<&Path>) -> Result<()> {
     })?;
 
     println!("Initialized tickets in {}", tickets.display());
-    Ok(())
+    Ok(tickets)
 }
 
-async fn init_tickets_dir(path: &Path) -> Result<()> {
+async fn init_tickets_dir(path: &Path) -> Result<PathBuf> {
     let tickets = storage::find_tickets_dir_with_override(Some(path), true).await?;
     if let Some(parent) = tickets.parent() {
         fs::create_dir_all(parent)
@@ -759,7 +794,7 @@ async fn init_tickets_dir(path: &Path) -> Result<()> {
         }
     })?;
     println!("Initialized tickets in {}", tickets.display());
-    Ok(())
+    Ok(tickets)
 }
 
 async fn create(dir: &Path, args: CreateArgs) -> Result<()> {
@@ -1438,6 +1473,12 @@ mod tests {
     }
 
     #[test]
+    fn argh_parses_explicit_session_recording() {
+        let parsed = Arguments::from_args(&["fer"], &["session"]).unwrap();
+        assert!(matches!(parsed.command, Some(CommandKind::Session(_))));
+    }
+
+    #[test]
     fn global_tickets_dir_parses_and_precedes_the_command() {
         let equals_values = [
             OsString::from("fer"),
@@ -1499,6 +1540,8 @@ mod tests {
         assert!(TOP_LEVEL_HELP.contains("ready [filters]"));
         assert!(TOP_LEVEL_HELP.contains("show <id>"));
         assert!(TOP_LEVEL_HELP.contains("built-in jq-compatible predicate"));
+        assert!(TOP_LEVEL_HELP.contains("session"));
+        assert!(TOP_LEVEL_HELP.contains("Record this Copilot interaction for Insights"));
         assert!(TOP_LEVEL_HELP.contains("--tickets-dir <path>"));
         assert!(TOP_LEVEL_HELP.contains("--tickets-dir overrides TICKETS_DIR"));
         assert!(TOP_LEVEL_HELP.ends_with('\n'));

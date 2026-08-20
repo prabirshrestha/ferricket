@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test"
 import type { Ticket } from "../../types/ticket"
 import { aggregateInsights, aggregateTrend } from "./insights-view"
-import { nearestTrendPointIndex, ticketsTouchedInWindow } from "./insights-data"
+import { nearestTrendPointIndex, resolveTrendWindow, ticketsTouchedInWindow } from "./insights-data"
+import { sessionEventsInWindow } from "./session-timeline"
+import type { SessionEvent } from "../../types/session"
 
 const ticket = (patch: Partial<Ticket>): Ticket => ({
   id: "fer-1",
@@ -113,6 +115,18 @@ test("smart range begins near the first relevant event", () => {
   expect(result.end.toISOString()).toBe(now.toISOString())
 })
 
+test("smart range includes agent session activity", () => {
+  const now = new Date("2026-06-10T12:00:00Z")
+  const result = resolveTrendWindow([], {
+    range: "smart",
+    bin: "auto",
+    eventDates: ["2026-06-09T12:00:00Z"],
+    now,
+  })
+  expect(result.start.getTime()).toBeLessThan(new Date("2026-06-09T12:00:00Z").getTime())
+  expect(result.end.toISOString()).toBe(now.toISOString())
+})
+
 test("auto bins adapt across short and long windows", () => {
   const now = new Date("2026-06-10T12:00:00Z")
   expect(aggregateTrend([], { range: "1h", bin: "auto", now }).binMinutes).toBe(1)
@@ -168,4 +182,25 @@ test("chart inspection snaps to and clamps at the nearest trend point", () => {
   expect(nearestTrendPointIndex(884, 5, 48, 884)).toBe(4)
   expect(nearestTrendPointIndex(-100, 5, 48, 884)).toBe(0)
   expect(nearestTrendPointIndex(1_000, 5, 48, 884)).toBe(4)
+})
+
+test("session timeline filters the shared range and shows newest events first", () => {
+  const event = (id: string, timestamp: string): SessionEvent => ({
+    id,
+    session_id: "session-1",
+    timestamp,
+    kind: "prompt",
+    content: id,
+  })
+  expect(
+    sessionEventsInWindow(
+      [
+        event("outside", "2026-06-10T08:00:00Z"),
+        event("older", "2026-06-10T10:00:00Z"),
+        event("newer", "2026-06-10T11:00:00Z"),
+      ],
+      new Date("2026-06-10T09:00:00Z"),
+      new Date("2026-06-10T12:00:00Z"),
+    ).map((item) => item.id),
+  ).toEqual(["newer", "older"])
 })

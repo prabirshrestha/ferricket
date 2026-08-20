@@ -64,7 +64,18 @@ fn path(workspace_key: &str, section: &str) -> Result<PathBuf> {
     if !matches!(section, "workspace" | "display" | "theme" | "tui") {
         bail!("unknown preference section '{section}'");
     }
-    let root = if cfg!(target_os = "macos") {
+    let root = config_root()?;
+    let mut hasher = Sha256::new();
+    hasher.update(workspace_key.as_bytes());
+    hasher.update([0]);
+    hasher.update(section.as_bytes());
+    Ok(root
+        .join("preferences")
+        .join(format!("{:x}.json", hasher.finalize())))
+}
+
+pub(crate) fn config_root() -> Result<PathBuf> {
+    if cfg!(target_os = "macos") {
         std::env::var_os("HOME")
             .map(PathBuf::from)
             .map(|path| path.join("Library/Application Support/ferricket"))
@@ -78,14 +89,7 @@ fn path(workspace_key: &str, section: &str) -> Result<PathBuf> {
             })
             .map(|path| path.join("ferricket"))
     }
-    .context("cannot locate user config directory")?;
-    let mut hasher = Sha256::new();
-    hasher.update(workspace_key.as_bytes());
-    hasher.update([0]);
-    hasher.update(section.as_bytes());
-    Ok(root
-        .join("preferences")
-        .join(format!("{:x}.json", hasher.finalize())))
+    .context("cannot locate user config directory")
 }
 
 #[cfg(test)]

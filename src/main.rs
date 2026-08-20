@@ -2,6 +2,7 @@ mod cli;
 mod github;
 mod preferences;
 mod query;
+mod session_activity;
 mod storage;
 mod tui;
 mod tui_input;

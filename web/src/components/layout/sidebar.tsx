@@ -71,8 +71,11 @@ export function Sidebar({
           <div className="grid size-6 shrink-0 place-items-center rounded-md bg-gradient-to-br from-indigo-400 to-indigo-700 text-xs font-semibold text-white shadow-inner">
             F
           </div>
-          <div className="flex min-w-0 flex-1 items-center overflow-hidden text-sm font-semibold tracking-[-.012em] group-data-[collapsible=icon]:hidden">
-            <span className="truncate">Ferricket</span>
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
+            <span className="w-full truncate text-sm font-semibold tracking-[-.012em]">
+              {workspaceName}
+            </span>
+            <span className="text-[10px] text-muted-foreground">Ferricket</span>
           </div>
         </div>
       </SidebarHeader>

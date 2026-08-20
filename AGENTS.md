@@ -15,6 +15,7 @@ Ferricket is an async Rust port of the ticket file-native issue tracker. The pac
 - src/storage.rs: async ticket discovery, parsing, mutation, relationships, and JSON/web projection.
 - src/query.rs: shared Gmail-style query semantics for the TUI; keep it behaviorally aligned with web/src/features/filters/filter-types.ts.
 - src/preferences.rs: async per-workspace user preferences stored outside ticket repositories.
+- src/session_activity.rs: local-only Copilot CLI prompt capture and workspace session activity.
 - src/github.rs: async `gh`-backed GitHub.com/GHE issue and pull-request reference discovery.
 - src/cli.rs: argh command definitions, compatibility output, plugin dispatch, and command handlers.
 - src/ui.rs: Axum API and embedded static-asset server used by fer ui.
