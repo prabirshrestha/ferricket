@@ -38,6 +38,22 @@ fer ready
 
 Ferricket searches the current directory and its parents for `.tickets/`. Pass `--tickets-dir <path>` or set `TICKETS_DIR` to use an explicit location; the flag takes precedence. Ticket commands accept exact IDs or unambiguous partial IDs.
 
+## One source of truth, every view
+
+The same Markdown tickets stay in sync everywhere Ferricket meets the work.
+
+**Plan together on the status board.**
+
+![Ferricket status board showing todo, in-progress, and done work](docs/assets/status-board.png)
+
+**Trace the path to done.**
+
+![Ferricket dependency graph showing the work that unlocks a release](docs/assets/dependency-path.png)
+
+**Stay in flow from the terminal.**
+
+![Ferricket terminal UI showing the active plan and ticket context](docs/assets/terminal-ui.png)
+
 ## Command-line help
 
 ~~~text
