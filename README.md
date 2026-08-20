@@ -201,4 +201,6 @@ See [AGENTS.md](AGENTS.md) for architecture and contribution rules.
 
 ## License
 
-MIT
+Ferricket is an async Rust port of [wedow/ticket](https://github.com/wedow/ticket).
+It adds a web UI and a terminal UI. Both projects use the MIT License. The
+original copyright and permission notice are preserved in [LICENSE](LICENSE).
