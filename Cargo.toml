@@ -1,6 +1,6 @@
 [package]
 name = "ferricket"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Prabir Shrestha <mail@prabir.me>"]
 edition = "2024"
 license = "MIT"
