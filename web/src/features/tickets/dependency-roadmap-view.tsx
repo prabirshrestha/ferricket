@@ -247,7 +247,7 @@ export function DependencyRoadmapView({
                   {stage.tickets.length} {stage.tickets.length === 1 ? "ticket" : "parallel"}
                 </span>
               </div>
-              <div className="grid gap-3 pt-3">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-3 pt-3">
                 {stage.tickets.map((ticket) => (
                   <RoadmapCard
                     key={ticket.id}
@@ -303,7 +303,7 @@ function RoadmapCard({
       data-ticket-id={ticket.id}
       tabIndex={0}
       className={cn(
-        "group relative flex h-28 cursor-pointer flex-col rounded-lg border border-l-[3px] bg-card p-3 shadow-sm transition-[border-color,box-shadow] hover:border-ring/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "group relative flex h-28 min-w-0 cursor-pointer flex-col rounded-lg border border-l-[3px] bg-card p-3 shadow-sm transition-[border-color,box-shadow] hover:border-ring/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         ticket.status === "closed" && "text-muted-foreground",
         unresolved && "border-destructive/35",
         (selected || focused) && "border-primary ring-1 ring-primary/40",
@@ -360,7 +360,12 @@ function RoadmapCard({
         </span>
         {context && <span className="text-[9px] text-muted-foreground">Context</span>}
       </div>
-      <h3 className="mt-2 line-clamp-2 text-[13px] font-medium leading-[1.35]">{ticket.title}</h3>
+      <h3
+        title={ticket.title}
+        className="mt-2 line-clamp-2 [overflow-wrap:anywhere] text-[13px] font-medium leading-[1.35]"
+      >
+        {ticket.title}
+      </h3>
       <div className="mt-auto flex min-w-0 items-center gap-1.5">
         <Priority priority={ticket.priority} />
         {ticket.deps.length > 0 && (
